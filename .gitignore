@@ -1,0 +1,33 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.env/
+.venv/
+venv/
+pip-wheel-metadata/
+
+# Test/coverage artifacts
+.pytest_cache/
+coverage.xml
+htmlcov/
+.tox/
+.mypy_cache/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Allure artifacts
+allure-results/
+allure-report/
+
+# Logs
+*.log
+
+# Results
+results.json
