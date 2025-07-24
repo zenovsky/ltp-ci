@@ -8,29 +8,29 @@ stages:
 
 variables:
   LTP_USER: "ciuser"
-  LTP_HOST: "172.25.20.148"
-  WEB_HOST: "172.25.20.132"
+  LTP_HOST: "ip_addr"
+  WEB_HOST: "1op_addr"
   RESULTS_PATH: "/tmp/kirk.ciuser/latest"
   REPORT_DIR: "/opt/allure"
 
 run_ltp:
   stage: run_ltp
   script:
-    - echo "[CI] Запуск LTP на удалённой машине..."
+    - echo "[CI] Running LTP on a Remote Machine..."
     - ssh $LTP_USER@$LTP_HOST 'bash -s' < scripts/ltp_runner.sh
-    - echo "[CI] Ожидание появления results.json (до 5 часов)..."
+    - echo "[CI] Waiting for results.json to appear..."
     - |
       for i in {1..300}; do
         if ssh $LTP_USER@$LTP_HOST test -f $RESULTS_PATH/results.json; then
-          echo "[✓] Файл найден!"
+          echo "[✓] File found!"
           break
         fi
-        echo "Ожидание... ($i/300)"
+        echo "Expectation... ($i/300)"
         sleep 60
       done
-    - echo "[CI] Копирование results.json..."
+    - echo "[CI] Copy results.json..."
     - scp $LTP_USER@$LTP_HOST:$RESULTS_PATH/results.json ./results.json
-    - echo "[CI] Удалить старые результаты..."
+    - echo "[CI] Delete old results..."
     - ssh $LTP_USER@$LTP_HOST rm -rf $RESULTS_PATH/*
   tags:
     - ltp
@@ -43,20 +43,20 @@ run_ltp:
 publish_report:
   stage: report
   script:
-    - echo "[CI] Копирование скриптов и результатов в $REPORT_DIR..."
+    - echo "[CI] Copying scripts and results to $REPORT_DIR..."
     - scp results.json ltp_to_allure.py generate_allure.sh $LTP_USER@$WEB_HOST:$REPORT_DIR/
-    - echo "[CI] Генерация отчета на веб-сервере с сохранением истории..."
+    - echo "[CI] Generate a report on a web server with history preservation..."
     - |
       ssh $LTP_USER@$WEB_HOST "
         set -e
         cd ${REPORT_DIR}
 
         
-        echo '[REMOTE] Конвертация в Allure JSON...'
+        echo '[REMOTE] Convert to Allure JSON...'
         python3 ltp_to_allure.py
 
         
-        echo '[REMOTE] Генерация HTML отчета (с использованием старой истории)...'
+        echo '[REMOTE] Generate HTML report (using old history)...'
         bash generate_allure.sh
       "
   tags:
@@ -70,16 +70,16 @@ publish_report:
 clearing_files:
   stage: cleaning
   script:
-    - echo "[CI] Очитска промежуточных файлов и временных скриптов..."
+    - echo "[CI] Cleaning up intermediate files and temporary scripts..."
     - |
       ssh $LTP_USER@$WEB_HOST "
         set -e
         cd ${REPORT_DIR}
 
-        echo '[REMOTE] Очистка промежуточных allure-results...'
+        echo '[REMOTE] Cleaning up intermediate allure-results...'
         rm -rf allure-results
 
-        echo '[REMOTE] Очистка временных скриптов...'
+        echo '[REMOTE] Clearing temporary scripts...'
         rm results.json ltp_to_allure.py generate_allure.sh
       "
   tags:
