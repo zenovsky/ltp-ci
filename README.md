@@ -34,7 +34,8 @@ On the machine with `GitLab Runner`:
 
 On the `WEB_HOST` machine:
 - Must have ssh and scp, python3 and also allure installed in /opt/allure
-`LTP_USER` must have full access and be the owner of /opt/allure/allure-report and all files and directories in it.
+`LTP_USER` must have full access and be the owner of `/opt/allure/allure-report` and all files and directories in it.
+- The `/opt/allure/allure-report` directory must be accessible as a web page via an `HTTP server`.
 
 📄 License
 
