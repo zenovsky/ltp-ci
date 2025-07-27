@@ -1,0 +1,87 @@
+# License: MIT
+# Copyright (c) 2025 Konstantin Zenovsky <https://github.com/zenovsky>
+# A CI/CD pipeline for automated running and reporting on the LTP.
+stages:
+  - run_ltp
+  - report
+  - cleaning
+
+variables:
+  LTP_USER: "ciuser"
+  LTP_HOST: "ip_addr"
+  WEB_HOST: "1op_addr"
+  RESULTS_PATH: "/tmp/kirk.ciuser/latest"
+  REPORT_DIR: "/opt/allure"
+
+run_ltp:
+  stage: run_ltp
+  script:
+    - echo "[CI] Running LTP on a Remote Machine..."
+    - ssh $LTP_USER@$LTP_HOST 'bash -s' < scripts/ltp_runner.sh
+    - echo "[CI] Waiting for results.json to appear..."
+    - |
+      for i in {1..300}; do
+        if ssh $LTP_USER@$LTP_HOST test -f $RESULTS_PATH/results.json; then
+          echo "[✓] File found!"
+          break
+        fi
+        echo "Expectation... ($i/300)"
+        sleep 60
+      done
+    - echo "[CI] Copy results.json..."
+    - scp $LTP_USER@$LTP_HOST:$RESULTS_PATH/results.json ./results.json
+    - echo "[CI] Delete old results..."
+    - ssh $LTP_USER@$LTP_HOST rm -rf $RESULTS_PATH/*
+  tags:
+    - ltp
+    - shell
+  artifacts:
+    paths:
+      - results.json
+    expire_in: 1 week
+
+publish_report:
+  stage: report
+  script:
+    - echo "[CI] Copying scripts and results to $REPORT_DIR..."
+    - scp results.json ltp_to_allure.py generate_allure.sh $LTP_USER@$WEB_HOST:$REPORT_DIR/
+    - echo "[CI] Generate a report on a web server with history preservation..."
+    - |
+      ssh $LTP_USER@$WEB_HOST "
+        set -e
+        cd ${REPORT_DIR}
+
+        
+        echo '[REMOTE] Convert to Allure JSON...'
+        python3 ltp_to_allure.py
+
+        
+        echo '[REMOTE] Generate HTML report (using old history)...'
+        bash generate_allure.sh
+      "
+  tags:
+    - ltp
+    - shell
+  artifacts:
+    paths:
+      - allure-results
+    expire_in: 1 week
+
+clearing_files:
+  stage: cleaning
+  script:
+    - echo "[CI] Cleaning up intermediate files and temporary scripts..."
+    - |
+      ssh $LTP_USER@$WEB_HOST "
+        set -e
+        cd ${REPORT_DIR}
+
+        echo '[REMOTE] Cleaning up intermediate allure-results...'
+        rm -rf allure-results
+
+        echo '[REMOTE] Clearing temporary scripts...'
+        rm results.json ltp_to_allure.py generate_allure.sh
+      "
+  tags:
+    - ltp
+    - shell      
