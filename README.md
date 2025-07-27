@@ -17,7 +17,11 @@ On remote machines (`LTP_HOST` and `WEB_HOST`):
 - Configure sudo for `LTP_USER` without a password (NOPASSWD).
 - Create a `.ssh directory` for `LTP_USER` and add the `GitLab Runner` public key to `authorized_keys`.
 - Grant access:
-<pre> ```bash sudo mkdir -p /home/LTP_USER/.ssh sudo touch /home/LTP_USER/.ssh/authorized_keys sudo chmod 700 /home/LTP_USER/.ssh sudo chmod 600 /home/LTP_USER/.ssh/authorized_keys sudo chown -R LTP_USER:LTP_USER /home/LTP_USER/.ssh ``` </pre>
+- sudo mkdir -p /home/LTP_USER/.ssh 
+- sudo touch /home/LTP_USER/.ssh/authorized_keys 
+- sudo chmod 700 /home/LTP_USER/.ssh 
+- sudo chmod 600 /home/LTP_USER/.ssh/authorized_keys 
+- sudo chown -R LTP_USER:LTP_USER /home/LTP_USER/.ssh
 
 On the `LTP_HOST` machine:
 - Must have ssh and scp python3
